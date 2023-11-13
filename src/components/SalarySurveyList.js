@@ -1,6 +1,5 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
-import TextField from '@mui/material/TextField';
 import { Container, Paper, Button } from '@mui/material';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -12,6 +11,8 @@ import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
+import dayjs from 'dayjs';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 
 export default function SalarySurveryList() {
     const paperStyle = { padding: '50px 20px', width: 600, margin: '20px auto' }
@@ -20,11 +21,13 @@ export default function SalarySurveryList() {
     const [salarySurveyList, setSalarySurveyList] = React.useState([]);
     const [results, setResults] = React.useState([]);
     const [gender, setGender] = React.useState('');
+    const [defaultSearchQuery] = React.useState('http://localhost:8080/salary-survey/survey?search=');
+    var [searchQuery, setsearchQuery] = React.useState('http://localhost:8080/salary-survey/survey?search=');
 
     React.useEffect(() => {
         if (!initialized.current) {
             initialized.current = true
-            fetch("http://localhost:8080/salary-survey/survey")
+            fetch(searchQuery)
                 .then(response => response.json())
                 .then((results) => {
                     setResults(results)
@@ -33,14 +36,15 @@ export default function SalarySurveryList() {
                 })
                 .catch(error => console.error(error));
         }
-    }, [])
+    }, [searchResults])
     console.log(results)
     console.log(searchResults)
 
     // Search
     const handleClick = (e) => {
         e.preventDefault()
-        fetch("http://localhost:8080/salary-survey/survey?search?")
+        console.log(searchQuery);
+        fetch(searchQuery)
             .then(response => response.json())
             .then((results) => {
                 setResults(results)
@@ -48,11 +52,17 @@ export default function SalarySurveryList() {
                 setSearchResults(results.page.totalElements)
             })
             .catch(error => console.error(error));
+        console.log(results);
     }
 
     // Add Gender to query
     const handleGenderChange = (event) => {
         setGender(event.target.value);
+        if (event.target.value != 'All') {
+            setsearchQuery(defaultSearchQuery + 'gender:' + event.target.value);
+        } else {
+            setsearchQuery(defaultSearchQuery);
+        }
     };
 
     return (
@@ -80,10 +90,15 @@ export default function SalarySurveryList() {
                             >
                                 <MenuItem value={"Male"}>Male</MenuItem>
                                 <MenuItem value={"Female"}>Female</MenuItem>
-                                <MenuItem value={"Empty"}>Empty</MenuItem>
-                            </Select>
+                                <MenuItem value={"All"}>All</MenuItem>
+                            </Select >
+
+                            <DateTimePicker defaultValue={dayjs('2022-04-17T15:30')} />
+
                         </FormControl>
-                        <Button variant="contained" onClick={handleClick}>Search</Button>
+                        <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
+                            <Button variant="contained" onClick={handleClick}>Search</Button>
+                        </FormControl>
                     </Box>
                 </Paper>
             </Container>
