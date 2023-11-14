@@ -1,5 +1,4 @@
 import * as React from 'react';
-import Box from '@mui/material/Box';
 import { Container, Paper, Button } from '@mui/material';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -13,21 +12,27 @@ import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 import dayjs from 'dayjs';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
+import moment from 'moment';
 
 export default function SalarySurveryList() {
-    const paperStyle = { padding: '50px 20px', width: 600, margin: '20px auto' }
+    // const paperStyle = { padding: '50px 20px', width: 600, margin: '20px auto' }
     const initialized = React.useRef(false);
     const [searchResults, setSearchResults] = React.useState(0);
     const [salarySurveyList, setSalarySurveyList] = React.useState([]);
     const [results, setResults] = React.useState([]);
     const [gender, setGender] = React.useState('');
+    const [dateTimeFrom, setDateTimeFrom] = React.useState('');
+    const [dateTimeTo, setDateTimeTo] = React.useState('');
     const [defaultSearchQuery] = React.useState('http://localhost:8080/salary-survey/survey?search=');
     var [searchQuery, setsearchQuery] = React.useState('http://localhost:8080/salary-survey/survey?search=');
+
 
     React.useEffect(() => {
         if (!initialized.current) {
             initialized.current = true
-            fetch(searchQuery)
+            fetch('http://localhost:8080/salary-survey/survey?search=')
                 .then(response => response.json())
                 .then((results) => {
                     setResults(results)
@@ -43,6 +48,15 @@ export default function SalarySurveryList() {
     // Search
     const handleClick = (e) => {
         e.preventDefault()
+        if (gender) {
+            searchQuery = defaultSearchQuery + 'gender:' + gender;
+        }
+        if (dateTimeFrom) {
+            searchQuery = searchQuery + ',' + 'timestamp=' + dateTimeFrom;
+        }
+        if (dateTimeTo) {
+            searchQuery = searchQuery + ',' + 'timestamp=' + dateTimeTo;
+        }
         console.log(searchQuery);
         fetch(searchQuery)
             .then(response => response.json())
@@ -58,50 +72,50 @@ export default function SalarySurveryList() {
     // Add Gender to query
     const handleGenderChange = (event) => {
         setGender(event.target.value);
-        if (event.target.value != 'All') {
-            setsearchQuery(defaultSearchQuery + 'gender:' + event.target.value);
-        } else {
-            setsearchQuery(defaultSearchQuery);
-        }
     };
+
+    // Add date time to query
+    const handleDateTimeSelect = (value) => {
+        var dateTimeInput = new Date(value);
+        var formattedDateTimeInput = moment(dateTimeInput).format('YYYY-MM-DDTHH-MM-ss');
+        setDateTimeFrom(formattedDateTimeInput);
+    }
 
     return (
         <Container>
             <h1>Search</h1>
 
-            <Container>
-                <Paper elevation={3} style={paperStyle}>
-                    <Box
-                        component="form"
-                        sx={{
-                            '& > :not(style)': { m: 1 },
-                        }}
-                        noValidate
-                        autoComplete="off"
+            <Container component={Paper}>
+                <FormControl sx={{ m: 1, minWidth: 120 }} size="large">
+                    <InputLabel>Gender</InputLabel>
+                    <Select
+                        defaultValue={'All'}
+                        value={gender}
+                        label="Gender"
+                        onChange={handleGenderChange}
                     >
-                        <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
-                            <InputLabel id="demo-simple-select-label">Gender</InputLabel>
-                            <Select
-                                labelId="demo-simple-select-label"
-                                id="demo-simple-select"
-                                value={gender}
-                                label="Gender"
-                                onChange={handleGenderChange}
-                            >
-                                <MenuItem value={"Male"}>Male</MenuItem>
-                                <MenuItem value={"Female"}>Female</MenuItem>
-                                <MenuItem value={"All"}>All</MenuItem>
-                            </Select >
-
-                            <DateTimePicker defaultValue={dayjs('2022-04-17T15:30')} />
-
-                        </FormControl>
-                        <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
-                            <Button variant="contained" onClick={handleClick}>Search</Button>
-                        </FormControl>
-                    </Box>
-                </Paper>
+                        <MenuItem value={"Male"}>Male</MenuItem>
+                        <MenuItem value={"Female"}>Female</MenuItem>
+                        <MenuItem value={"All"}>All</MenuItem>
+                    </Select >
+                </FormControl>
+                <FormControl sx={{ m: 1, minWidth: 120 }} >
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DateTimePicker
+                            label='Timestamp'
+                            ampm={false}
+                            defaultValue={dayjs('2022-04-17 15:30:00')}
+                            onChange={handleDateTimeSelect}
+                            format='YYYY-MM-DD HH:MM:ss'
+                        />
+                    </LocalizationProvider>
+                </FormControl>
+                <FormControl sx={{ m: 1 }} size="large">
+                    <Button variant="contained" onClick={handleClick} size='large'>Search</Button>
+                </FormControl>
             </Container>
+
+            <br />
 
             <TableContainer component={Paper}>
                 <Table sx={{ minWidth: 650 }} size="small" aria-label="a dense table">
