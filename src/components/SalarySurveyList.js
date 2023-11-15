@@ -36,7 +36,11 @@ export default function SalarySurveryList() {
                 .then(response => response.json())
                 .then((results) => {
                     setResults(results)
-                    setSalarySurveyList(results._embedded.salarySurveyList)
+                    if (results._embedded.salarySurveyList === null) {
+                        setSalarySurveyList()
+                    } else {
+                        setSalarySurveyList(results._embedded.salarySurveyList)
+                    }
                     setSearchResults(results.page.totalElements)
                 })
                 .catch(error => console.error(error));
@@ -49,13 +53,13 @@ export default function SalarySurveryList() {
     const handleClick = (e) => {
         e.preventDefault()
         if (gender) {
-            searchQuery = defaultSearchQuery + 'gender:' + gender;
+            searchQuery = `${defaultSearchQuery}gender:${gender}`;
         }
         if (dateTimeFrom) {
-            searchQuery = searchQuery + ',' + 'timestamp=' + dateTimeFrom;
+            searchQuery = `${searchQuery},timestamp:${dateTimeFrom}`;
         }
         if (dateTimeTo) {
-            searchQuery = searchQuery + ',' + 'timestamp=' + dateTimeTo;
+            searchQuery = `${searchQuery},timestamp:${dateTimeTo}`;
         }
         console.log(searchQuery);
         fetch(searchQuery)
@@ -71,14 +75,18 @@ export default function SalarySurveryList() {
 
     // Add Gender to query
     const handleGenderChange = (event) => {
-        setGender(event.target.value);
+        if (event.target.value !== 'All') {
+            setGender(event.target.value);
+        } else {
+            setGender([]);
+        }
     };
 
     // Add date time to query
     const handleDateTimeSelect = (value) => {
         var dateTimeInput = new Date(value);
-        var formattedDateTimeInput = moment(dateTimeInput).format('YYYY-MM-DDTHH-MM-ss');
-        setDateTimeFrom(formattedDateTimeInput);
+        // var formattedDateTimeInput = moment(dateTimeInput).format('YYYY-MM-DDTHH-MM-ss');
+        setDateTimeFrom(dateTimeInput.valueOf());
     }
 
     return (
@@ -90,7 +98,6 @@ export default function SalarySurveryList() {
                     <InputLabel>Gender</InputLabel>
                     <Select
                         defaultValue={'All'}
-                        value={gender}
                         label="Gender"
                         onChange={handleGenderChange}
                     >
