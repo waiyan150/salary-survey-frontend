@@ -15,7 +15,6 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import moment from 'moment';
-import Typography from '@mui/material/Typography';
 
 export default function SalarySurveryList() {
     // const paperStyle = { padding: '50px 20px', width: 600, margin: '20px auto' }
