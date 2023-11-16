@@ -15,6 +15,7 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import moment from 'moment';
+import Typography from '@mui/material/Typography';
 
 export default function SalarySurveryList() {
     // const paperStyle = { padding: '50px 20px', width: 600, margin: '20px auto' }
@@ -25,14 +26,14 @@ export default function SalarySurveryList() {
     const [gender, setGender] = React.useState('');
     const [dateTimeFrom, setDateTimeFrom] = React.useState('');
     const [dateTimeTo, setDateTimeTo] = React.useState('');
-    const [defaultSearchQuery] = React.useState('http://localhost:8080/salary-survey/survey?search=');
-    var [searchQuery, setsearchQuery] = React.useState('http://localhost:8080/salary-survey/survey?search=');
+    const [defaultSearchQuery] = React.useState('http://localhost:8080/salary-survey/survey?');
+    var [searchQuery] = React.useState('http://localhost:8080/salary-survey/survey?');
 
 
     React.useEffect(() => {
         if (!initialized.current) {
             initialized.current = true
-            fetch('http://localhost:8080/salary-survey/survey?search=')
+            fetch('http://localhost:8080/salary-survey/survey?')
                 .then(response => response.json())
                 .then((results) => {
                     setResults(results)
@@ -50,27 +51,38 @@ export default function SalarySurveryList() {
     console.log(searchResults)
 
     // Search
-    const handleClick = (e) => {
+    const handleSearch = (e) => {
         e.preventDefault()
         if (gender) {
-            searchQuery = `${defaultSearchQuery}gender:${gender}`;
+            searchQuery = `${defaultSearchQuery}gender=${gender}`;
         }
         if (dateTimeFrom) {
-            searchQuery = `${searchQuery},timestamp:${dateTimeFrom}`;
+            searchQuery = `${searchQuery}&timestamp=${dateTimeFrom}`;
         }
         if (dateTimeTo) {
-            searchQuery = `${searchQuery},timestamp:${dateTimeTo}`;
+            searchQuery = `${searchQuery}&timestamp=${dateTimeTo}`;
         }
         console.log(searchQuery);
         fetch(searchQuery)
             .then(response => response.json())
             .then((results) => {
                 setResults(results)
-                setSalarySurveyList(results._embedded.salarySurveyList)
+                if (results._embedded) {
+                    setSalarySurveyList(results._embedded.salarySurveyList)
+                } else {
+                    setSalarySurveyList([])
+                }
                 setSearchResults(results.page.totalElements)
             })
             .catch(error => console.error(error));
         console.log(results);
+    }
+
+    // Clear
+    const handleClear = (e) => {
+        setGender('');
+        setDateTimeFrom('');
+        setDateTimeTo('');
     }
 
     // Add Gender to query
@@ -83,23 +95,35 @@ export default function SalarySurveryList() {
     };
 
     // Add date time to query
-    const handleDateTimeSelect = (value) => {
+    const handleDateTimeSelectFrom = (value) => {
         var dateTimeInput = new Date(value);
-        // var formattedDateTimeInput = moment(dateTimeInput).format('YYYY-MM-DDTHH-MM-ss');
-        setDateTimeFrom(dateTimeInput.valueOf());
+        var formattedDateTimeInput = moment(dateTimeInput).format('YYYY-MM-DDTHH:mm:ss');
+        console.log(formattedDateTimeInput);
+        setDateTimeFrom(formattedDateTimeInput);
+    }
+
+    const handleDateTimeSelectTo = (value) => {
+        var dateTimeInput = new Date(value);
+        var formattedDateTimeInput = moment(dateTimeInput).format('YYYY-MM-DDTHH:mm:ss');
+        console.log(formattedDateTimeInput);
+        setDateTimeTo(formattedDateTimeInput);
     }
 
     return (
-        <Container>
-            <h1>Search</h1>
-
-            <Container component={Paper}>
+        <Container maxWidth="xl">
+            <br />
+            <Container component={Paper} maxWidth="xl">
+                <FormControl sx={{ m: 1, minWidth: 120, textAlign: 'left' }} size="large">
+                    <b>Search</b>
+                    Search Results : {searchResults}
+                </FormControl>
                 <FormControl sx={{ m: 1, minWidth: 120 }} size="large">
                     <InputLabel>Gender</InputLabel>
                     <Select
                         defaultValue={'All'}
                         label="Gender"
                         onChange={handleGenderChange}
+                        value={gender}
                     >
                         <MenuItem value={"Male"}>Male</MenuItem>
                         <MenuItem value={"Female"}>Female</MenuItem>
@@ -109,16 +133,30 @@ export default function SalarySurveryList() {
                 <FormControl sx={{ m: 1, minWidth: 120 }} >
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DateTimePicker
-                            label='Timestamp'
+                            label='Timestamp From'
                             ampm={false}
-                            defaultValue={dayjs('2022-04-17 15:30:00')}
-                            onChange={handleDateTimeSelect}
-                            format='YYYY-MM-DD HH:MM:ss'
+                            defaultValue={dayjs('2016-03-21T12:59:00')}
+                            onChange={handleDateTimeSelectFrom}
+                            format='YYYY-MM-DD HH:mm:ss'
+                        />
+                    </LocalizationProvider>
+                </FormControl>
+                <FormControl sx={{ m: 1, minWidth: 120 }} >
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DateTimePicker
+                            label='Timestamp To'
+                            ampm={false}
+                            defaultValue={dayjs('2016-03-21T12:59:00')}
+                            onChange={handleDateTimeSelectTo}
+                            format='YYYY-MM-DD HH:mm:ss'
                         />
                     </LocalizationProvider>
                 </FormControl>
                 <FormControl sx={{ m: 1 }} size="large">
-                    <Button variant="contained" onClick={handleClick} size='large'>Search</Button>
+                    <Button variant="contained" onClick={handleSearch} size='large'>Search</Button>
+                </FormControl>
+                <FormControl sx={{ m: 1 }} size="large">
+                    <Button variant="outlined" onClick={handleClear} size='large'>Clear</Button>
                 </FormControl>
             </Container>
 
@@ -131,16 +169,16 @@ export default function SalarySurveryList() {
                             <TableCell>ID</TableCell>
                             <TableCell align="right">Timestamp</TableCell>
                             <TableCell align="right">Employer</TableCell>
-                            <TableCell align="right">Location</TableCell>
-                            <TableCell align="right">Job Title</TableCell>
-                            <TableCell align="right">Years at Employer</TableCell>
-                            <TableCell align="right">Years of Experience</TableCell>
-                            <TableCell align="right">Salary</TableCell>
-                            <TableCell align="right">Signing Bonus</TableCell>
-                            <TableCell align="right">Annual Bonus</TableCell>
-                            <TableCell align="right">Annual Stock Value/Bonus</TableCell>
-                            <TableCell align="right">Gender</TableCell>
-                            <TableCell align="right">Additional Comments</TableCell>
+                            <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Location</TableCell>
+                            <TableCell align="right" >Job Title</TableCell>
+                            <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Years at Employer</TableCell>
+                            <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Years of Experience</TableCell>
+                            <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Salary</TableCell>
+                            <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Signing Bonus</TableCell>
+                            <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Annual Bonus</TableCell>
+                            <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Annual Stock Value/Bonus</TableCell>
+                            <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Gender</TableCell>
+                            <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Additional Comments</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -154,16 +192,16 @@ export default function SalarySurveryList() {
                                 </TableCell>
                                 <TableCell align="right">{row.timestamp}</TableCell>
                                 <TableCell align="right">{row.employer}</TableCell>
-                                <TableCell align="right">{row.location}</TableCell>
+                                <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{row.location}</TableCell>
                                 <TableCell align="right">{row.jobTitle}</TableCell>
-                                <TableCell align="right">{row.yearsAtEmployer}</TableCell>
-                                <TableCell align="right">{row.yearsOfExperience}</TableCell>
-                                <TableCell align="right">{row.salary}</TableCell>
-                                <TableCell align="right">{row.signingBonus}</TableCell>
-                                <TableCell align="right">{row.annualBonus}</TableCell>
-                                <TableCell align="right">{row.annualStockValueBonus}</TableCell>
-                                <TableCell align="right">{row.gender}</TableCell>
-                                <TableCell align="right">{row.additionalComments}</TableCell>
+                                <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{row.yearsAtEmployer}</TableCell>
+                                <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{row.yearsOfExperience}</TableCell>
+                                <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{row.salary}</TableCell>
+                                <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{row.signingBonus}</TableCell>
+                                <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{row.annualBonus}</TableCell>
+                                <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{row.annualStockValueBonus}</TableCell>
+                                <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{row.gender}</TableCell>
+                                <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{row.additionalComments}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
